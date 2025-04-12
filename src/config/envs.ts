@@ -4,7 +4,7 @@ import * as joi from 'joi'
 interface EnvVars {
     PORT: number
     NODE_ENV: string
-    //DATABASE_URL: string
+    MONGODB_CONNECTION: string
     NATS_SERVERS: string[]
 }
 
@@ -12,7 +12,7 @@ interface EnvVars {
 const envsSchema = joi.object({
     PORT: joi.number().required(),
     NODE_ENV: joi.string().required(),
-    //DATABASE_URL: joi.string().required(),
+    MONGODB_CONNECTION: joi.string().required(),
     NATS_SERVERS: joi.array().items(joi.string()).required()
 })
     .unknown(true)
@@ -30,6 +30,7 @@ const envVars: EnvVars = value
 export const envs = {
     port: envVars.PORT,
     node_env: envVars.NODE_ENV,
-    //databaseUrl: envVars.DATABASE_URL,
+    mongoDbConnection: envVars.MONGODB_CONNECTION,
     natsServers: envVars.NATS_SERVERS,
+
 }
