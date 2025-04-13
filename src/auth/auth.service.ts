@@ -3,6 +3,9 @@ import { RpcException } from '@nestjs/microservices';
 import { PrismaClient } from 'generated/prisma';
 import { LoginUserDto, RegisterUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import { JwtPayloadAuth } from './interfaces/jwt-payload.interface';
+import { envs } from 'src/config';
 
 
 
@@ -13,15 +16,19 @@ export class AuthService extends PrismaClient implements OnModuleInit {
     private readonly logger = new Logger('AuthService')
 
     constructor(
-
+        private readonly jwtServices: JwtService
     ) {
         super()
     }
+
+    //Todo ---    DB CONNECTION      ------
 
     onModuleInit() {
         this.$connect()
         this.logger.log('MongoDb connected successfully')
     }
+
+    //Todo ---    REGISTER      ------
 
     async registerUser(registerUserDto: RegisterUserDto) {
 
@@ -55,7 +62,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
             return {
                 user: rest,
-                token: 'ABC'
+                token: await this.signJWT(rest)
             }
 
         } catch (error) {
@@ -65,6 +72,8 @@ export class AuthService extends PrismaClient implements OnModuleInit {
             })
         }
     }
+
+    //Todo ---    LOGIN      ------
 
     async loginUser(loginUserDto: LoginUserDto) {
 
@@ -96,7 +105,7 @@ export class AuthService extends PrismaClient implements OnModuleInit {
 
             return {
                 user: rest,
-                token: 'ABC'
+                token: await this.signJWT(rest)
             }
 
         } catch (error) {
@@ -107,7 +116,33 @@ export class AuthService extends PrismaClient implements OnModuleInit {
         }
     }
 
-    validateToken() {
-        return 'Validate Token ok'
+    //Todo ---   Validador de token   --------
+
+    async validateToken(token: string) {
+
+        try {
+
+            const {sub, iat, exp, ...user} = this.jwtServices.verify(token, {
+                secret: envs.jwtSecret,
+            })
+
+            return {
+                user: user, 
+                token: await this.signJWT(user)
+            }
+
+        } catch (error) {
+            throw new RpcException({
+                status: HttpStatus.UNAUTHORIZED,
+                message: 'Invalid token'
+            })
+        }
     }
+
+    //Todo ---    JWT      ------
+
+    async signJWT(payload: JwtPayloadAuth) {
+        return this.jwtServices.sign(payload)
+    }
+
 }
