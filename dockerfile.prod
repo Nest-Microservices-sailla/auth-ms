@@ -1,0 +1,27 @@
+# DependenciAS 
+FROM node:23-alpine3.21 AS deps 
+WORKDIR /usr/src/app 
+COPY package.json ./ 
+RUN npm install 
+# Builder 
+FROM node:23-alpine3.21 AS build 
+WORKDIR /usr/src/app 
+#Copiar de deps los modulos de Node 
+COPY --from=deps /usr/src/app/node_modules ./node_modules 
+#Copiamos todo el codigo fuente de la aplicación 
+COPY . . 
+#Build 
+RUN npx prisma generate
+RUN npm run build
+
+# Imagen final para producción
+FROM node:23-alpine3.21 AS prod
+
+WORKDIR /usr/src/app
+
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY --from=build /usr/src/app/generated ./generated
+COPY --from=build /usr/src/app/dist ./dist
+USER node 
+EXPOSE 3000 
+CMD [ "node", "dist/main.js" ]
